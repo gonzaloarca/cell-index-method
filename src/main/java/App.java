@@ -1,13 +1,17 @@
 import ar.edu.itba.ss.cellindexmethod.models.Particle;
 import ar.edu.itba.ss.cellindexmethod.models.Position2D;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
 public class App {
-    static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
+    private final static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
+    private final static String OUT_FILE_NAME = "out.txt";
 
     public static void main(String[] args) {
         NeighbourDetection cellIndexMethod = new CellIndexMethod(5, 5, 1, Arrays.asList(
@@ -25,9 +29,29 @@ public class App {
                 particleGenerator.apply(4.9, 4.9) //11
         ));
         Map<Long, List<Particle>> neighbours = cellIndexMethod.calculateNeighbourListsPeriodic();
+
+        try {
+            App.writeNeighbourListToFile(neighbours, OUT_FILE_NAME);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         neighbours.forEach((k, v) -> {
             System.out.print(k);
             System.out.println(v);
         });
+    }
+
+    public static void writeNeighbourListToFile(Map<Long, List<Particle>> neighbourList, String fileName)
+            throws IOException {
+        FileWriter fileWriter = new FileWriter(fileName);
+        PrintWriter printWriter = new PrintWriter(fileWriter);
+
+        neighbourList.forEach((particleId, particleNeighbours) -> {
+            printWriter.printf("%d\t", particleId);
+            particleNeighbours.forEach(neighbour -> printWriter.printf("%d ", neighbour.getId()));
+            printWriter.println();
+        });
+
+        printWriter.close();
     }
 }
