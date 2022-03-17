@@ -25,7 +25,7 @@ public class App {
                 particleGenerator.apply(4.9, 4.9) //11
         ));
         Map<Long, List<Particle>> neighbours = cellIndexMethod.calculateNeighbourListsPeriodic();
-        neighbours.forEach((k,v) ->{
+        neighbours.forEach((k, v) -> {
             System.out.print(k);
             System.out.println(v);
         });

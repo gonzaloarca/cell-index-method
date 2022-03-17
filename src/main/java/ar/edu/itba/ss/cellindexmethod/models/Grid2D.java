@@ -1,7 +1,6 @@
 package ar.edu.itba.ss.cellindexmethod.models;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Grid2D {
@@ -22,7 +21,7 @@ public class Grid2D {
         int j = calculateGridCol(particle.getPosition().getX());
 
         if (grid[i][j] == null) {
-            grid[i][j] = new Cell(i,j);
+            grid[i][j] = new Cell(i, j);
         }
 
         grid[i][j].addParticle(particle);
