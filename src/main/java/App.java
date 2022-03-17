@@ -22,16 +22,13 @@ public class App {
         StaticParameters staticParameters = readStaticParametersFromFile(STATIC_FILE_NAME);
         DynamicParameters dynamicParameters = readDynamicParametersFromFile(DYNAMIC_FILE_NAME, staticParameters.getParticleCount());
 
-        NeighbourDetection cellIndexMethod = new CellIndexMethod(staticParameters.getDim(), 5, 1,
+        NeighbourDetection cellIndexMethod = new CellIndexMethod(staticParameters.getDim(), 5, 6,
                 createParticleList(dynamicParameters.getParticlePositionList(), staticParameters.getParticleRadiusList()));
 
         Map<Long, List<Particle>> neighbours = cellIndexMethod.calculateNeighbourLists();
 
-        try {
-            writeNeighbourListToFile(neighbours, OUT_FILE_NAME);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writeNeighbourListToFile(neighbours, OUT_FILE_NAME);
+
         neighbours.forEach((k, v) -> {
             System.out.print(k);
             System.out.println(v);
@@ -61,17 +58,15 @@ public class App {
     private static StaticParameters readStaticParametersFromFile(String fileName) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(fileName));
 
-        String particleCountStr = reader.readLine();
-        String dimStr = reader.readLine();
-
-        System.out.println(Arrays.toString(particleCountStr.split("\\s+")));
-
+        String particleCountStr = reader.readLine().trim();
+        String dimStr = reader.readLine().trim();
+        
         int particleCount = Integer.parseInt(particleCountStr);
 
         StaticParameters parameters = new StaticParameters(particleCount, Double.parseDouble(dimStr));
 
         for (int i = 0; i < particleCount; i++) {
-            String radiusStr = reader.readLine().split("\\s+")[0];
+            String radiusStr = reader.readLine().trim().split("\\s+")[0];
             parameters.addParticleRadiusToList(Double.parseDouble(radiusStr));
         }
 
@@ -88,7 +83,7 @@ public class App {
         DynamicParameters parameters = new DynamicParameters();
 
         for (int i = 0; i < particleCount; i++) {
-            String[] particlePositionTokens = reader.readLine().split("\\s+");
+            String[] particlePositionTokens = reader.readLine().trim().split("\\s+");
 
             double x = Double.parseDouble(particlePositionTokens[0]);
             double y = Double.parseDouble(particlePositionTokens[1]);
