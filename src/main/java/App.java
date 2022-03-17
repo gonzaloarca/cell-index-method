@@ -1,9 +1,10 @@
+import ar.edu.itba.ss.cellindexmethod.models.DynamicParameters;
 import ar.edu.itba.ss.cellindexmethod.models.Particle;
 import ar.edu.itba.ss.cellindexmethod.models.Position2D;
+import ar.edu.itba.ss.cellindexmethod.models.StaticParameters;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -12,26 +13,22 @@ import java.util.function.BiFunction;
 public class App {
     private final static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
     private final static String OUT_FILE_NAME = "out.txt";
+    private final static String STATIC_FILE_NAME = "Static100.txt";
+    private final static String DYNAMIC_FILE_NAME = "Dynamic100.txt";
 
-    public static void main(String[] args) {
-        NeighbourDetection cellIndexMethod = new CellIndexMethod(5, 5, 1, Arrays.asList(
-                particleGenerator.apply(0.3, 0.8), //0
-                particleGenerator.apply(0.6, 0.8), //1
-                particleGenerator.apply(2.6, 0.8), //2
-                particleGenerator.apply(0.5, 1.3), //3
-                particleGenerator.apply(1.5, 1.3), //4
-                particleGenerator.apply(3.1, 1.5), //5
-                particleGenerator.apply(4.2, 1.3), //6
-                particleGenerator.apply(1.2, 2.1), //7
-                particleGenerator.apply(2.5, 2.1), //8
-                particleGenerator.apply(1.8, 3.2), //9
-                particleGenerator.apply(3.6, 3.2), //10
-                particleGenerator.apply(4.9, 4.9) //11
-        ));
+
+    public static void main(String[] args) throws IOException {
+
+        StaticParameters staticParameters = readStaticParametersFromFile(STATIC_FILE_NAME);
+        DynamicParameters dynamicParameters = readDynamicParametersFromFile(DYNAMIC_FILE_NAME, staticParameters.getParticleCount());
+
+        NeighbourDetection cellIndexMethod = new CellIndexMethod(staticParameters.getDim(), 5, 1,
+                createParticleList(dynamicParameters.getParticlePositionList(), staticParameters.getParticleRadiusList()));
+
         Map<Long, List<Particle>> neighbours = cellIndexMethod.calculateNeighbourLists();
 
         try {
-            App.writeNeighbourListToFile(neighbours, OUT_FILE_NAME);
+            writeNeighbourListToFile(neighbours, OUT_FILE_NAME);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -61,17 +58,72 @@ public class App {
         });
     }
 
+    private static StaticParameters readStaticParametersFromFile(String fileName) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+
+        String particleCountStr = reader.readLine();
+        String dimStr = reader.readLine();
+
+        System.out.println(Arrays.toString(particleCountStr.split("\\s+")));
+
+        int particleCount = Integer.parseInt(particleCountStr);
+
+        StaticParameters parameters = new StaticParameters(particleCount, Double.parseDouble(dimStr));
+
+        for (int i = 0; i < particleCount; i++) {
+            String radiusStr = reader.readLine().split("\\s+")[0];
+            parameters.addParticleRadiusToList(Double.parseDouble(radiusStr));
+        }
+
+        reader.close();
+
+        return parameters;
+    }
+
+    private static DynamicParameters readDynamicParametersFromFile(String fileName, int particleCount) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+
+        String time = reader.readLine();
+
+        DynamicParameters parameters = new DynamicParameters();
+
+        for (int i = 0; i < particleCount; i++) {
+            String[] particlePositionTokens = reader.readLine().split("\\s+");
+
+            double x = Double.parseDouble(particlePositionTokens[0]);
+            double y = Double.parseDouble(particlePositionTokens[1]);
+
+            parameters.addParticlePositionToList(x, y);
+        }
+
+        reader.close();
+
+        return parameters;
+    }
+
+    private static List<Particle> createParticleList(List<Position2D> positionList, List<Double> radiusList) {
+        List<Particle> particleList = new ArrayList<>();
+
+        for (int i = 0; i < positionList.size(); i++) {
+            particleList.add(new Particle(positionList.get(i), radiusList.get(i)));
+        }
+
+        return particleList;
+    }
+
     public static void writeNeighbourListToFile(Map<Long, List<Particle>> neighbourList, String fileName)
             throws IOException {
         FileWriter fileWriter = new FileWriter(fileName);
         PrintWriter printWriter = new PrintWriter(fileWriter);
 
         neighbourList.forEach((particleId, particleNeighbours) -> {
-            printWriter.printf("%d\t", particleId);
-            particleNeighbours.forEach(neighbour -> printWriter.printf("%d ", neighbour.getId()));
+            printWriter.printf("%d", particleId);
+            particleNeighbours.forEach(neighbour -> printWriter.printf(",%d", neighbour.getId()));
             printWriter.println();
         });
 
         printWriter.close();
     }
+
+
 }
