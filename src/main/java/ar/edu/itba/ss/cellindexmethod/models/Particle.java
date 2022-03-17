@@ -1,5 +1,7 @@
 package ar.edu.itba.ss.cellindexmethod.models;
 
+import java.util.Objects;
+
 public class Particle {
     private static long _id = 0;
     private long id;
@@ -27,5 +29,18 @@ public class Particle {
     @Override
     public String toString() {
         return Long.toString(this.id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Particle particle = (Particle) o;
+        return id == particle.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

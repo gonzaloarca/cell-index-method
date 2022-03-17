@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 public class App {
-    static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 2);
+    static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
 
     public static void main(String[] args) {
-        CellIndexMethod cellIndexMethod = new CellIndexMethod(5, 5, 9, Arrays.asList(
+        NeighbourDetection cellIndexMethod = new CellIndexMethod(5, 5, 1, Arrays.asList(
                 particleGenerator.apply(0.3, 0.8), //0
                 particleGenerator.apply(0.6, 0.8), //1
                 particleGenerator.apply(2.6, 0.8), //2
@@ -22,10 +22,8 @@ public class App {
                 particleGenerator.apply(2.5, 2.1), //8
                 particleGenerator.apply(1.8, 3.2), //9
                 particleGenerator.apply(3.6, 3.2), //10
-                particleGenerator.apply(4.5, 4.4) //11
-
+                particleGenerator.apply(4.9, 4.9) //11
         ));
-
         Map<Long, List<Particle>> neighbours = cellIndexMethod.calculateNeighbourListsPeriodic();
         neighbours.forEach((k,v) ->{
             System.out.print(k);

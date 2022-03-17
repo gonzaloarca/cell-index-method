@@ -9,10 +9,12 @@ public class Grid2D {
     final private int size;
     final private double cellSize;
 
+
     public Grid2D(int size, double cellSize) {
         this.size = size;
         this.grid = new Cell[size][size];
         this.cellSize = cellSize;
+
     }
 
     public void addParticle(Particle particle) {
@@ -20,7 +22,7 @@ public class Grid2D {
         int j = calculateGridCol(particle.getPosition().getX());
 
         if (grid[i][j] == null) {
-            grid[i][j] = new Cell();
+            grid[i][j] = new Cell(i,j);
         }
 
         grid[i][j].addParticle(particle);
@@ -40,10 +42,14 @@ public class Grid2D {
     }
 
     static public class Cell {
+        final private int row;
+        final private int col;
         final private List<Particle> particles;
 
-        public Cell() {
+        public Cell(int row, int col) {
             this.particles = new ArrayList<>();
+            this.col = col;
+            this.row = row;
         }
 
         public List<Particle> getParticles() {
@@ -52,6 +58,14 @@ public class Grid2D {
 
         public void addParticle(Particle particle) {
             particles.add(particle);
+        }
+
+        public int getRow() {
+            return row;
+        }
+
+        public int getCol() {
+            return col;
         }
     }
 
