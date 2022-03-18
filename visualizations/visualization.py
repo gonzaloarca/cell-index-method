@@ -39,6 +39,7 @@ def plot_particles(L, M, particles=[], rc=5, selected_particle=0, neighbors=[]):
     ax.set_ylim([0, L])
     ax.set_xticks(np.arange(0, L, L/M))
     ax.set_yticks(np.arange(0, L, L/M))
+    ax.set_aspect('auto')
     plt.grid()
     for circle in circles:
         print(circle)
@@ -53,18 +54,21 @@ if __name__ == '__main__':
                         default=None, help="File of neighbors list", dest="neighbors", required=True)
     parser.add_argument("--selected", type=int, default=0,
                         help="Index of selected particle", dest="selected", required=True)
-    parser.add_argument("--rc", type=int, default=5,
+    parser.add_argument("--rc", type=float, default=5,
                         help="Cut radius", dest="rc", required=True)
     parser.add_argument("--static", type=argparse.FileType('r'),
                         help="Static information file", dest='static', required=True)
     parser.add_argument("--dynamic", type=argparse.FileType('r'),
                         help="Dynamic information file", dest='dynamic', required=True)
+
+    parser.add_argument("--M", type=int,
+                        help="Number of cells", dest='M', required=True)
     args = parser.parse_args()
 
     neighborList = []
     rc = args.rc
     selected_particle = args.selected
-    M = 10
+    M =args.M
 
     with args.neighbors as neighborFile:
         lines = neighborFile.readlines()
