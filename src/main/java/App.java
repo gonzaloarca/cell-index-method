@@ -4,10 +4,7 @@ import ar.edu.itba.ss.cellindexmethod.models.Position2D;
 import ar.edu.itba.ss.cellindexmethod.models.StaticParameters;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 
 public class App {
@@ -53,6 +50,13 @@ public class App {
             System.out.print(k);
             System.out.println(v);
         });
+
+        ArrayList<Particle>[] particles = generateDistribution(10, 5, 5, 2.0);
+        for(int i = 0; i < 5; i++) {
+            for (Particle p: particles[i]) {
+                System.out.println(p.getPosition());
+            }
+        }
     }
 
     private static StaticParameters readStaticParametersFromFile(String fileName) throws IOException {
@@ -60,7 +64,7 @@ public class App {
 
         String particleCountStr = reader.readLine().trim();
         String dimStr = reader.readLine().trim();
-        
+
         int particleCount = Integer.parseInt(particleCountStr);
 
         StaticParameters parameters = new StaticParameters(particleCount, Double.parseDouble(dimStr));
@@ -120,5 +124,35 @@ public class App {
         printWriter.close();
     }
 
+    private static ArrayList<Particle>[] generateDistribution(long N, int M, long L, double radius) {
+        double rightLimit = (double) L;
 
+        ArrayList<Particle>[] particles = new ArrayList[M];
+
+        for (int i = 0; i < N; ) {
+            double xPosition = new Random().nextDouble() * rightLimit;
+            double yPosition = new Random().nextDouble() * rightLimit;
+            int row = (int) Math.floor(xPosition);
+            Position2D position = new Position2D(xPosition, yPosition);
+            boolean overlaps = false;
+
+            if(particles[row] == null) {
+                particles[row] = new ArrayList<>();
+            }
+
+            for (Particle p : particles[row]) {
+                if(p.isOverlaping(position)) {
+                    overlaps = true;
+                    break;
+                }
+            }
+
+            if(!overlaps) {
+                particles[row].add(new Particle(position, radius));
+                i++;
+            }
+        }
+
+        return particles;
+    }
 }

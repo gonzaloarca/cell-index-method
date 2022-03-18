@@ -26,6 +26,10 @@ public class Particle {
         return id;
     }
 
+    public boolean isOverlaping(Position2D position) {
+        return this.position.getX() == position.getX() && this.position.getY() == position.getY();
+    }
+
     @Override
     public String toString() {
         return Long.toString(this.id);
