@@ -4,37 +4,32 @@ import ar.edu.itba.ss.cellindexmethod.models.Position2D;
 import ar.edu.itba.ss.cellindexmethod.models.StaticParameters;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 public class App {
     private final static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
-    private final static String OUT_FILE_NAME = "out500.txt";
-    private final static String STATIC_FILE_NAME = "Static500.txt";
-    private final static String DYNAMIC_FILE_NAME = "Dynamic500.txt";
+    private final static String OUT_FILE_NAME = "out.txt";
+    private final static String STATIC_FILE_NAME = "Static.txt";
+    private final static String DYNAMIC_FILE_NAME = "Dynamic.txt";
 
 
     public static void main(String[] args) throws IOException {
-        double L = 1000;
-        double rc = 1;
-
-//        run(STATIC_FILE_NAME, DYNAMIC_FILE_NAME, OUT_FILE_NAME, 10, 2, false);
-        runBenchmark(1000, 1, rc, L,20000,0.25);
+//        writeRandomParticleFiles(generateDistribution(1000, 20, 0.25), STATIC_FILE_NAME, DYNAMIC_FILE_NAME, 20, 0);
+//        run(STATIC_FILE_NAME, DYNAMIC_FILE_NAME, OUT_FILE_NAME, 10, 1, true);
+        runCellCountBenchmark(1, 1, 20, 500, 0.25);
+        runParticleCountBenchmark(100, 1, 20, 5000, 0.25);
     }
 
     private static Map<Long, List<Particle>> runBruteForce(int n, double rc, List<Particle> particles) {
         NeighbourDetection bruteForceMethod = new BruteForce(n, rc, particles);
         Map<Long, List<Particle>> neighbourList;
 
-        long startTimeBrute = System.nanoTime();
-
         neighbourList = bruteForceMethod.calculateNeighbourLists();
 
-        long endTimeBrute = System.nanoTime();
-
-        double millisBrute = ((double) (endTimeBrute - startTimeBrute)) / 1000000;
-        System.out.println("Elapsed time: " + millisBrute + " ms");
         return neighbourList;
     }
 
@@ -42,40 +37,76 @@ public class App {
         NeighbourDetection cellIndexMethod = new CellIndexMethod(L, M, rc, particles);
 
         Map<Long, List<Particle>> neighbourList;
-        long startTime = System.nanoTime();
         if (isPeriodic) {
             neighbourList = cellIndexMethod.calculateNeighbourListsPeriodic();
         } else {
             neighbourList = cellIndexMethod.calculateNeighbourLists();
         }
 
-        long endTime = System.nanoTime();
-
-        double millis = ((double) (endTime - startTime)) / 1000000;
-        System.out.println("Elapsed time: " + millis + " ms");
         return neighbourList;
     }
 
-    public static void runBenchmark(int particleStep, int cellCountStep, double rc, double L, int maxParticleCount, double particleRadius) throws IOException {
-
-        writeInputFiles(generateDistribution(maxParticleCount, L, particleRadius), STATIC_FILE_NAME, DYNAMIC_FILE_NAME, L, 0);
+    public static void runCellCountBenchmark(int cellCountStep, double rc, double L, int particleCount, double particleRadius) throws IOException {
+        writeRandomParticleFiles(generateDistribution(particleCount, L, particleRadius), STATIC_FILE_NAME, DYNAMIC_FILE_NAME, L, 0);
         StaticParameters staticParameters = readStaticParametersFromFile(STATIC_FILE_NAME);
         DynamicParameters dynamicParameters = readDynamicParametersFromFile(DYNAMIC_FILE_NAME, staticParameters.getParticleCount());
         List<Particle> particles = createParticleList(dynamicParameters.getParticlePositionList(), staticParameters.getParticleRadiusList());
 
+        PrintWriter printWriter = new PrintWriter(new FileWriter("CellCountBenchmark.txt"));
+
         int maxM = (int) Math.ceil(L / rc);
+        System.out.println(maxM);
+        List<Particle> sublist = particles.subList(0, particleCount);
+
+        for (int m = 1; m < maxM; m += cellCountStep) {
+
+            long startTime = System.nanoTime();
+            runCellIndexMethod(L, m, rc, sublist, false);
+            long endTime = System.nanoTime();
+            double millis = ((double) (endTime - startTime)) / 1000000;
+
+            long periodicStartTime = System.nanoTime();
+            runCellIndexMethod(L, m, rc, sublist, true);
+            long periodicEndTime = System.nanoTime();
+            double periodicMillis = ((double) (periodicEndTime - periodicStartTime)) / 1000000;
+            printWriter.printf("%d\t%.5f\t%.5f\n", m, millis, periodicMillis);
+        }
+
+        printWriter.close();
+    }
+
+    public static void runParticleCountBenchmark(int particleStep, double rc, double L, int maxParticleCount, double particleRadius) throws IOException {
+
+        writeRandomParticleFiles(generateDistribution(maxParticleCount, L, particleRadius), STATIC_FILE_NAME, DYNAMIC_FILE_NAME, L, 0);
+        StaticParameters staticParameters = readStaticParametersFromFile(STATIC_FILE_NAME);
+        DynamicParameters dynamicParameters = readDynamicParametersFromFile(DYNAMIC_FILE_NAME, staticParameters.getParticleCount());
+        List<Particle> particles = createParticleList(dynamicParameters.getParticlePositionList(), staticParameters.getParticleRadiusList());
+
+        int M = (int) (L / (2 * rc));
+
+        PrintWriter printWriter = new PrintWriter(new FileWriter("ParticleCountBenchmark.txt"));
+
         for (int n = particleStep; n < particles.size(); n += particleStep) {
             List<Particle> sublist = particles.subList(0, n);
-            System.out.println("N = " + n + "=====================================");
-            System.out.print("Brute Force: ");
+
+            long startTimeBrute = System.nanoTime();
             runBruteForce(n, rc, sublist);
-            for (int m = 1; m < maxM; m += cellCountStep) {
-                System.out.print("M = " + m + " (Periodic) ");
-                runCellIndexMethod(L, m, rc, sublist, true);
-                System.out.print("M = " + m + " ");
-                runCellIndexMethod(L, m, rc, sublist, false);
-            }
+            long endTimeBrute = System.nanoTime();
+            double millisBrute = ((double) (endTimeBrute - startTimeBrute)) / 1000000;
+
+            long startTime = System.nanoTime();
+            runCellIndexMethod(L, M, rc, sublist, false);
+            long endTime = System.nanoTime();
+            double millis = ((double) (endTime - startTime)) / 1000000;
+
+            long startTimePeriodic = System.nanoTime();
+            runCellIndexMethod(L, M, rc, sublist, true);
+            long endTimePeriodic = System.nanoTime();
+            double millisPeriodic = ((double) (endTimePeriodic - startTimePeriodic)) / 1000000;
+            printWriter.printf("%d\t%.5f\t%.5f\t%.5f\n", n, millis, millisPeriodic, millisBrute);
         }
+
+        printWriter.close();
     }
 
 
@@ -142,7 +173,7 @@ public class App {
         return particleList;
     }
 
-    private static void writeInputFiles(List<Particle> particles, String staticPathname, String dynamicPathname, double L, int time) throws IOException {
+    private static void writeRandomParticleFiles(List<Particle> particles, String staticPathname, String dynamicPathname, double L, int time) throws IOException {
         PrintWriter staticPrintWriter = new PrintWriter(new FileWriter(staticPathname));
         staticPrintWriter.printf("%d\n%.4f\n", particles.size(), L);
         PrintWriter dynamicPrintWriter = new PrintWriter(new FileWriter(dynamicPathname));
