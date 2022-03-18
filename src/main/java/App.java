@@ -6,23 +6,28 @@ import ar.edu.itba.ss.cellindexmethod.models.StaticParameters;
 import java.io.*;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 public class App {
     private final static BiFunction<Double, Double, Particle> particleGenerator = (x, y) -> new Particle(new Position2D(x, y), 1);
-    private final static String OUT_FILE_NAME = "out.txt";
-    private final static String STATIC_FILE_NAME = "Static100.txt";
-    private final static String DYNAMIC_FILE_NAME = "Dynamic100.txt";
+    private final static String OUT_FILE_NAME = "out500.txt";
+    private final static String STATIC_FILE_NAME = "Static500.txt";
+    private final static String DYNAMIC_FILE_NAME = "Dynamic500.txt";
 
 
     public static void main(String[] args) throws IOException {
-        run(STATIC_FILE_NAME, DYNAMIC_FILE_NAME, OUT_FILE_NAME, 5, 6, true);
+        run(STATIC_FILE_NAME, DYNAMIC_FILE_NAME, OUT_FILE_NAME, 10, 2, true);
+//        writeInputFiles(generateDistribution(500, 100, 1), "Static500.txt", "Dynamic500.txt", 100, 0);
     }
 
-    public static void run(String staticPath, String dynamicPath, String outPath, int M, int rc, boolean isPeriodic) throws IOException {
+    public static void run(String staticPath, String dynamicPath, String outPath, int M, double rc, boolean isPeriodic) throws IOException {
+
         StaticParameters staticParameters = readStaticParametersFromFile(staticPath);
         DynamicParameters dynamicParameters = readDynamicParametersFromFile(dynamicPath, staticParameters.getParticleCount());
 
-        NeighbourDetection cellIndexMethod = new CellIndexMethod(staticParameters.getDim(), M, rc,
+        double L = staticParameters.getDim();
+
+        NeighbourDetection cellIndexMethod = new CellIndexMethod(L, M, rc,
                 createParticleList(dynamicParameters.getParticlePositionList(), staticParameters.getParticleRadiusList()));
 
         Map<Long, List<Particle>> neighbourList;
@@ -31,8 +36,7 @@ public class App {
 
         if (isPeriodic) {
             neighbourList = cellIndexMethod.calculateNeighbourListsPeriodic();
-        }
-        else {
+        } else {
             neighbourList = cellIndexMethod.calculateNeighbourLists();
         }
 
@@ -95,6 +99,26 @@ public class App {
         return particleList;
     }
 
+    private static void writeInputFiles(List<Particle> particles, String staticPathname, String dynamicPathname, int L, int time) throws IOException {
+        PrintWriter staticPrintWriter = new PrintWriter(new FileWriter(staticPathname));
+        staticPrintWriter.printf("%d\n%d\n", particles.size(), L);
+        PrintWriter dynamicPrintWriter = new PrintWriter(new FileWriter(dynamicPathname));
+        dynamicPrintWriter.printf("%d\n", time);
+        Position2D position2D;
+        for(int i = 0; i< particles.size();i++){
+            staticPrintWriter.printf("%.4f\t1.0000",particles.get(i).getRadius());
+            position2D = particles.get(i).getPosition();
+            dynamicPrintWriter.printf("%.7e\t%.7e",position2D.getX(),position2D.getY());
+            if( i != particles.size() - 1){
+                staticPrintWriter.println();
+                dynamicPrintWriter.println();
+            }
+        }
+
+        staticPrintWriter.close();
+        dynamicPrintWriter.close();
+    }
+
     private static void writeNeighbourListToFile(Map<Long, List<Particle>> neighbourList, String fileName)
             throws IOException {
         FileWriter fileWriter = new FileWriter(fileName);
@@ -109,31 +133,27 @@ public class App {
         printWriter.close();
     }
 
-    private static ArrayList<Particle>[] generateDistribution(long N, int M, long L, double radius) {
+    private static List<Particle> generateDistribution(long N, long L, double radius) {
         double rightLimit = (double) L;
 
-        ArrayList<Particle>[] particles = new ArrayList[M];
+        List<Particle> particles = new ArrayList<>();
+        ;
 
         for (int i = 0; i < N; ) {
             double xPosition = new Random().nextDouble() * rightLimit;
             double yPosition = new Random().nextDouble() * rightLimit;
-            int row = (int) Math.floor(xPosition);
             Position2D position = new Position2D(xPosition, yPosition);
             boolean overlaps = false;
 
-            if(particles[row] == null) {
-                particles[row] = new ArrayList<>();
-            }
-
-            for (Particle p : particles[row]) {
-                if(p.isOverlaping(position)) {
+            for (Particle p : particles) {
+                if (p.isOverlaping(position)) {
                     overlaps = true;
                     break;
                 }
             }
 
-            if(!overlaps) {
-                particles[row].add(new Particle(position, radius));
+            if (!overlaps) {
+                particles.add(new Particle(position, radius));
                 i++;
             }
         }
