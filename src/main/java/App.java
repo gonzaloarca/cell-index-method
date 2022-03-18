@@ -45,6 +45,7 @@ public class App {
                 particleGenerator.apply(3.6, 3.2), //10
                 particleGenerator.apply(4.9, 4.9) //11
         ));
+
         neighbours = bruteForce.calculateNeighbourLists();
         neighbours.forEach((k, v) -> {
             System.out.print(k);
